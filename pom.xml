@@ -119,6 +119,11 @@
             <id>aiur-nexus</id>
             <url>https://nexus-aiur2016.rhcloud.com/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>aiur-nexus</id>
+            <name>aiur-nexus</name>
+            <url>https://nexus-aiur2016.rhcloud.com/nexus/content/repositories/releases</url>
+        </repository>
     </distributionManagement>
 
     <repositories>
