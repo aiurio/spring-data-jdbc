@@ -117,4 +117,10 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <scm>
+        <url>https://github.com/aiurio/spring-data-jdbc</url>
+        <connection>scm:git:git://github.com/aiurio/spring-data-jdbc.git</connection>
+        <developerConnection>scm:git:git@github.com:aiurio/spring-data-jdbc.git</developerConnection>
+    </scm>
+
 </project>
