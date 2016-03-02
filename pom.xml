@@ -103,6 +103,7 @@
                 <configuration>
                     <serverId>aiur-nexus</serverId>
                     <nexusUrl>https://nexus-aiur2016.rhcloud.com/nexus/</nexusUrl>
+                    <skipStaging>true</skipStaging>
                 </configuration>
             </plugin>
             <plugin>
