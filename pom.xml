@@ -120,6 +120,13 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>aiur-nexus</id>
+            <url>https://nexus-aiur2016.rhcloud.com/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
+
     <scm>
         <url>https://github.com/aiurio/spring-data-jdbc</url>
         <connection>scm:git:git://github.com/aiurio/spring-data-jdbc.git</connection>
