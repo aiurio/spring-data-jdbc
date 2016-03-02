@@ -7,8 +7,6 @@ import org.springframework.util.StringUtils;
 /**
  * SQLServer Pagination feature for SQLServer 2012+ -> extension of order by clause
  *
- * @see http://msdn.microsoft.com/en-us/library/ms188385.aspx
- *      Author: tom
  */
 public class Mssql2012SqlGenerator extends AbstractMssqlSqlGenerator {
 
