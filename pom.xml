@@ -4,7 +4,7 @@
 
     <groupId>io.aiur.oss</groupId>
     <artifactId>spring-data-jdbc</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
 
     <dependencies>
         <dependency>
@@ -119,7 +119,7 @@
         <url>https://github.com/aiurio/spring-data-jdbc</url>
         <connection>scm:git:git://github.com/aiurio/spring-data-jdbc.git</connection>
         <developerConnection>scm:git:git@github.com:aiurio/spring-data-jdbc.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>spring-data-jdbc-0.2.0</tag>
   </scm>
 
 </project>
