@@ -1,6 +1,7 @@
 package io.aiur.oss.db.jdbc.jdbc.impl;
 
 import com.google.common.base.CaseFormat;
+import com.google.common.collect.Lists;
 import io.aiur.oss.db.jdbc.jdbc.BasePersistable;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcMarshallers;
@@ -43,6 +44,10 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     // default to postges, for now. because we like postgres
     public static SqlGenerator DEFAULT_GENERATOR = new PostgreSqlGenerator();
 
+    private static final List<Class<?>> PRIMITIVES = Arrays.asList(
+            Long.class, Integer.class, Float.class, Double.class, String.class, Number.class
+    );
+
     private Class<ID> idType;
 
     @Getter
@@ -79,6 +84,10 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
             } catch (Exception e){
                 throw new RuntimeException("Failed instantiating RowMapper for " + type.getName(), e);
             }
+        }
+
+        if( PRIMITIVES.contains(type) ){
+            return new SingleColumnRowMapper<>(type);
         }
 
         return new ColumnAwareBeanPropertyRowMapper<>(type);

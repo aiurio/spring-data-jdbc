@@ -138,6 +138,6 @@
         <connection>scm:git:git://github.com/aiurio/spring-data-jdbc.git</connection>
         <developerConnection>scm:git:git@github.com:aiurio/spring-data-jdbc.git</developerConnection>
         <tag>spring-data-jdbc-0.2.0</tag>
-  </scm>
+    </scm>
 
 </project>
