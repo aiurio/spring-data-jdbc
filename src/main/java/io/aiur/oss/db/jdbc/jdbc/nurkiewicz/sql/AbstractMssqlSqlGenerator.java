@@ -14,7 +14,7 @@ abstract class AbstractMssqlSqlGenerator extends SqlGenerator {
 	}
 
 	@Override
-	protected String limitClause(Pageable page) {
+	public String limitClause(Pageable page) {
 		return "";
 	}
 }

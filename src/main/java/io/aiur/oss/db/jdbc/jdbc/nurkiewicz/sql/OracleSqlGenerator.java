@@ -15,7 +15,7 @@ public class OracleSqlGenerator extends SqlGenerator {
 	}
 
 	@Override
-	protected String limitClause(Pageable page) {
+	public String limitClause(Pageable page) {
 		return "";
 	}
 

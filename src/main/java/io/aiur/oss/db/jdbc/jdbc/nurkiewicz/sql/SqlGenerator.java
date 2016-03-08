@@ -104,7 +104,7 @@ public class SqlGenerator {
 		return selectAll(table) + sortingClauseIfRequired(sort);
 	}
 
-	protected String limitClause(Pageable page) {
+	public String limitClause(Pageable page) {
 		final int offset = page.getPageNumber() * page.getPageSize();
 		return " LIMIT " + offset + COMMA + page.getPageSize();
 	}

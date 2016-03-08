@@ -1,12 +1,9 @@
 package io.aiur.oss.db.jdbc.jdbc.impl;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.collect.Lists;
 import io.aiur.oss.db.jdbc.jdbc.BasePersistable;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
-import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcMarshallers;
-import io.aiur.oss.db.jdbc.jdbc.mapping.ColumnAwareBeanPropertyRowMapper;
-import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.MissingRowUnmapper;
+import io.aiur.oss.db.jdbc.jdbc.mapping.RowMappers;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.RowUnmapper;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.TableDescription;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.sql.PostgreSqlGenerator;
@@ -18,12 +15,10 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.jdbc.core.*;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
@@ -44,10 +39,6 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     // default to postges, for now. because we like postgres
     public static SqlGenerator DEFAULT_GENERATOR = new PostgreSqlGenerator();
 
-    private static final List<Class<?>> PRIMITIVES = Arrays.asList(
-            Long.class, Integer.class, Float.class, Double.class, String.class, Number.class, Boolean.class
-    );
-
     private Class<ID> idType;
 
     @Getter
@@ -66,46 +57,13 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
 
     public JdbcRepositoryImpl(Class<ID> idType, Class<T> type, String table, String idColumn){
         this.idType = idType;
-        this.rowUnmapper = resolveRowUnmapper(type);
-        this.rowMapper = resolveRowMapper(type);
+        this.rowUnmapper = RowMappers.resolveRowUnmapper(type);
+        this.rowMapper = RowMappers.resolveRowMapper(type);
         this.sqlGenerator = sqlGenerator == null ? DEFAULT_GENERATOR : sqlGenerator;
         this.table = new TableDescription(table, idColumn);
     }
 
-    public static <T> RowMapper<T> resolveRowMapper(Class<T> type){
-        JdbcMarshallers a = AnnotationUtils.findAnnotation(type, JdbcMarshallers.class);
-        if( a != null ){
-            try {
-                RowMapper instance = a.mapper().newInstance();
-                if( instance instanceof BeanPropertyRowMapper){
-                    ((BeanPropertyRowMapper) instance).setMappedClass(type);
-                }
-                return instance;
-            } catch (Exception e){
-                throw new RuntimeException("Failed instantiating RowMapper for " + type.getName(), e);
-            }
-        }
 
-        if( PRIMITIVES.contains(type) ){
-            return new SingleColumnRowMapper<>(type);
-        }
-
-        return new ColumnAwareBeanPropertyRowMapper<>(type);
-    }
-
-    private <T> RowUnmapper<T> resolveRowUnmapper(Class<T> type){
-        JdbcMarshallers a = AnnotationUtils.findAnnotation(type, JdbcMarshallers.class);
-        if( a != null ){
-            try {
-                RowUnmapper instance = a.unmapper().newInstance();
-                return instance;
-            } catch (Exception e){
-                throw new RuntimeException("Failed instantiating RowUnmapper for " + type.getName(), e);
-            }
-        }
-
-        return new MissingRowUnmapper<>();
-    }
 
     private <T extends Persistable<ID>, ID extends Serializable> String resolveTableName(Class<T> type) {
         JdbcEntity a = type.getAnnotation(JdbcEntity.class);
@@ -152,10 +110,6 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
 
     public void setDataSource(DataSource dataSource) {
         this.jdbcOperations = new JdbcTemplate(dataSource);
-    }
-
-    protected TableDescription getTable() {
-        return table;
     }
 
     private void obtainSqlGenerator() {
