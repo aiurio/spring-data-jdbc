@@ -45,7 +45,7 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     public static SqlGenerator DEFAULT_GENERATOR = new PostgreSqlGenerator();
 
     private static final List<Class<?>> PRIMITIVES = Arrays.asList(
-            Long.class, Integer.class, Float.class, Double.class, String.class, Number.class
+            Long.class, Integer.class, Float.class, Double.class, String.class, Number.class, Boolean.class
     );
 
     private Class<ID> idType;

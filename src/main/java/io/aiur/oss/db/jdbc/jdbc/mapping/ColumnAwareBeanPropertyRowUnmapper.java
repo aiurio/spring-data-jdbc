@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.RowUnmapper;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
@@ -20,6 +22,12 @@ public class ColumnAwareBeanPropertyRowUnmapper <T> implements RowUnmapper<T> {
     @Inject
     private List<JdbcTypeConverter> converters = Lists.newArrayList();
 
+    /**
+     * See {@link ColumnAwareBeanPropertyRowMapper#offsetEnumIndex}.
+     */
+    @Getter @Setter
+    private boolean offsetEnumIndex = true;
+
     @Override
     public Map<String, Object> mapColumns(T o) {
         ColumnAwareBeanPropertyRowMapper mapper = new ColumnAwareBeanPropertyRowMapper(o.getClass());
@@ -31,6 +39,7 @@ public class ColumnAwareBeanPropertyRowUnmapper <T> implements RowUnmapper<T> {
         fields.forEach((mapping) ->{
             Object value = bw.getPropertyValue(mapping.getProperty());
             Object origValue = value;
+
             Optional<JdbcTypeConverter> converter = converters.stream()
                     .filter(c -> c.canConvertToSqlType(origValue))
                     .sorted((a,b) -> a.getOrder() - b.getOrder() )
@@ -38,6 +47,12 @@ public class ColumnAwareBeanPropertyRowUnmapper <T> implements RowUnmapper<T> {
 
             if( converter.isPresent() ){
                 value = converter.get().convertToSqlType(value);
+            } else if( value != null && value.getClass().isEnum() ){
+                int ordinal = ((Enum) value).ordinal();
+                if( offsetEnumIndex ){
+                    ordinal += 1;
+                }
+                value = ordinal;
             }
 
             result.put(mapping.getColumn(), value );
