@@ -7,6 +7,7 @@ import org.reflections.Reflections;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.data.AbstractRepositoryConfigurationSourceSupport;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.data.mapping.Association;
@@ -57,6 +58,8 @@ public class JdbcRepositoryRegistrar extends AbstractRepositoryConfigurationSour
         Set<Class<?>> entities = reflections.getTypesAnnotatedWith(JdbcEntity.class);
 
         registry.registerBeanDefinition("mappingDefinition", mappingDefinition(entities));
+
+        registry.registerBeanDefinition("jdbcEventFilter", new RootBeanDefinition(JdbcEventFilter.class));
 
         boolean autoGenerate = (Boolean) importingClassMetadata
                 .getAnnotationAttributes(EnableJdbcRepositories.class.getName())
