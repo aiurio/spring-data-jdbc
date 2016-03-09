@@ -78,7 +78,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         Assert.notNull(ann, "Could not find @JdbcQuery on custom query for " + clazz + "#" + method.getName());
 
 
-        StringBuilder sql = determineSql(ann, clazz);
+        StringBuilder sql = JdbcQueryUtil.sqlBuilderFromMethod(method, sqlCache, true);
         Map<String, Object>  namedParams = getParams(parameters);
 
         Class<?> methodType = method.getReturnType();
@@ -114,6 +114,8 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
 
         return processed;
     }
+
+
 
     private Class<?> determineReturnType(boolean isOptional, JdbcQuery ann) {
         Class<?> returnType;
@@ -175,21 +177,6 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         return namedParams;
     }
 
-    private StringBuilder determineSql(JdbcQuery ann, String clazz) {
-        StringBuilder sql = new StringBuilder();
-        if( StringUtils.hasText(ann.value()) ){
-            sql.append( sqlCache.getByKey(ann.value()) );
-        }else{
-            sql.append( ann.query() );
-        }
-        if( sql == null ){
-
-            log.warn("Could not determine query for {}#{} with annotation {}",
-                    clazz, method.getName(), ann);
-            throw new IllegalArgumentException("Could not determine query for custom method " + clazz + "#" + method.getName());
-        }
-        return sql;
-    }
 
     private Object unwrapProxy(Object proxy) {
         try {

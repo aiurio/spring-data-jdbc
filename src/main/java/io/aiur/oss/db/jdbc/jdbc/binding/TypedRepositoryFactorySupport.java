@@ -57,7 +57,7 @@ public class TypedRepositoryFactorySupport<T extends Persistable<ID>, ID extends
             }
         }
 
-        JdbcRepositoryImpl<?, ?> repo = new JdbcRepositoryImpl(id, domain, table, "id");
+        JdbcRepositoryImpl<?, ?> repo = new JdbcRepositoryImpl(id, domain, table, "id", md);
         beanFactory.autowireBean(repo);
         try {
             repo.afterPropertiesSet();

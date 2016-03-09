@@ -4,7 +4,9 @@ import com.google.common.base.CaseFormat;
 import io.aiur.oss.db.jdbc.jdbc.BasePersistable;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
 import io.aiur.oss.db.jdbc.jdbc.binding.JdbcEventFilter;
+import io.aiur.oss.db.jdbc.jdbc.binding.JdbcQueryUtil;
 import io.aiur.oss.db.jdbc.jdbc.mapping.RowMappers;
+import io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.RowUnmapper;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.TableDescription;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.sql.PostgreSqlGenerator;
@@ -20,15 +22,18 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.rest.core.event.*;
 import org.springframework.jdbc.core.*;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -46,8 +51,11 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
 
     // default to postges, for now. because we like postgres
     public static SqlGenerator DEFAULT_GENERATOR = new PostgreSqlGenerator();
+    private final RepositoryInformation repoInfo;
 
     private Class<ID> idType;
+
+    private Class<T> domainType;
 
     @Getter
     private SqlGenerator sqlGenerator;
@@ -62,27 +70,23 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     private JdbcOperations jdbcOperations;
     @Inject
     private ApplicationContext applicationContext;
-
     @Inject
     private ApplicationEventPublisher publisher;
+    @Inject
+    private SqlCache sqlCache;
 
-    public JdbcRepositoryImpl(Class<ID> idType, Class<T> type, String table, String idColumn){
+    protected String deleteSql, deleteAllSql, existsSql, findOneSql, countSql;
+
+    public JdbcRepositoryImpl(Class<ID> idType, Class<T> domainType, String table, String idColumn, RepositoryInformation repoInfo){
         this.idType = idType;
-        this.rowUnmapper = RowMappers.resolveRowUnmapper(type);
-        this.rowMapper = RowMappers.resolveRowMapper(type);
+        this.domainType = domainType;
+        this.rowUnmapper = RowMappers.resolveRowUnmapper(domainType);
+        this.rowMapper = RowMappers.resolveRowMapper(domainType);
         this.sqlGenerator = sqlGenerator == null ? DEFAULT_GENERATOR : sqlGenerator;
         this.table = new TableDescription(table, idColumn);
+        this.repoInfo = repoInfo;
     }
 
-
-
-    private <T extends Persistable<ID>, ID extends Serializable> String resolveTableName(Class<T> type) {
-        JdbcEntity a = type.getAnnotation(JdbcEntity.class);
-        if( a != null && StringUtils.hasText(a.table()) ){
-            return a.table();
-        }
-        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, type.getSimpleName());
-    }
 
     /**
      * General purpose hook method that is called every time {@link #create} is called with a new entity.
@@ -113,6 +117,38 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
         }
 
         applicationContext.getAutowireCapableBeanFactory().autowireBean(rowUnmapper);
+        initCustomSqlQueries();
+    }
+
+    protected void initCustomSqlQueries() {
+        Class<?> repo = repoInfo.getRepositoryInterface();
+
+        // we don't override Save, because that's the unmappers job...
+
+        Method delete = ReflectionUtils.findMethod(repo, "delete", idType);
+        if( delete != null ){
+            deleteSql = JdbcQueryUtil.sqlFromMethod(delete, sqlCache, false);
+        }
+
+        Method deleteAll = ReflectionUtils.findMethod(repo, "deleteAll");
+        if( deleteAll != null ) {
+            deleteAllSql = JdbcQueryUtil.sqlFromMethod(deleteAll, sqlCache, false);
+        }
+
+        Method count = ReflectionUtils.findMethod(repo, "count");
+        if( count != null ) {
+            countSql = JdbcQueryUtil.sqlFromMethod(count, sqlCache, false);
+        }
+
+        Method exists = ReflectionUtils.findMethod(repo, "exists", idType);
+        if( exists != null ) {
+            existsSql = JdbcQueryUtil.sqlFromMethod(exists, sqlCache, false);
+        }
+
+        Method findOne = ReflectionUtils.findMethod(repo, "fineOne", idType);
+        if( findOne != null ) {
+            findOneSql = JdbcQueryUtil.sqlFromMethod(findOne, sqlCache, false);
+        }
     }
 
     public void setJdbcOperations(JdbcOperations jdbcOperations) {
@@ -142,7 +178,8 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
 
     @Override
     public long count() {
-        return jdbcOperations.queryForObject(sqlGenerator.count(table), Long.class);
+        String sql = countSql == null ? sqlGenerator.count(table) : countSql;
+        return jdbcOperations.queryForObject(sql, Long.class);
     }
 
     @Override
@@ -152,7 +189,8 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
             publish(new BeforeDeleteEvent(entity));
         }
 
-        jdbcOperations.update(sqlGenerator.deleteById(table), idToObjectArray(id));
+        String sql = deleteSql == null ? sqlGenerator.deleteById(table) : deleteSql;
+        jdbcOperations.update(sql, idToObjectArray(id));
 
         if( entity != null ) {
             publish(new AfterDeleteEvent(entity));
@@ -173,12 +211,14 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
 
     @Override
     public void deleteAll() {
-        jdbcOperations.update(sqlGenerator.deleteAll(table));
+        String sql = deleteAllSql == null ? sqlGenerator.deleteAll(table) : deleteAllSql;
+        jdbcOperations.update(sql);
     }
 
     @Override
     public boolean exists(ID id) {
-        return jdbcOperations.queryForObject(sqlGenerator.countById(table), Integer.class, idToObjectArray(id)) > 0;
+        String sql = existsSql == null ? sqlGenerator.countById(table) : existsSql;
+        return jdbcOperations.queryForObject(sql, Integer.class, idToObjectArray(id)) > 0;
     }
 
     @Override
@@ -189,7 +229,8 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     @Override
     public T findOne(ID id) {
         final Object[] idColumns = idToObjectArray(id);
-        final List<T> entityOrEmpty = jdbcOperations.query(sqlGenerator.selectById(table), idColumns, rowMapper);
+        String sql = findOneSql == null ? sqlGenerator.selectById(table) : findOneSql;
+        final List<T> entityOrEmpty = jdbcOperations.query(sql, idColumns, rowMapper);
         return entityOrEmpty.isEmpty() ? null : entityOrEmpty.get(0);
     }
 
