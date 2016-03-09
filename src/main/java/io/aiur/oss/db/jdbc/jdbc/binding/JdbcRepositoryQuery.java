@@ -3,6 +3,7 @@ package io.aiur.oss.db.jdbc.jdbc.binding;
 
 import com.google.common.collect.Maps;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcQuery;
+import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.impl.JdbcRepositoryImpl;
 import io.aiur.oss.db.jdbc.jdbc.mapping.RowMappers;
 import io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache;
@@ -25,7 +26,6 @@ import org.springframework.util.StringUtils;
 import other.AutowireUtil;
 import other.ProjectionService;
 
-import javax.inject.Inject;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -42,10 +42,11 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
     private final ProjectionService projectionService;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SqlCache sqlCache;
+    private final List<JdbcTypeConverter> converters;
 
     public JdbcRepositoryQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries,
                                ApplicationContext ctx, ProjectionService projectionService,
-                               NamedParameterJdbcTemplate jdbcTemplate, SqlCache sqlCache) {
+                               NamedParameterJdbcTemplate jdbcTemplate, SqlCache sqlCache, List<JdbcTypeConverter> converters) {
         this.method = method;
         this.metadata = metadata;
         this.namedQueries = namedQueries;
@@ -54,6 +55,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         this.projectionService = projectionService;
         this.jdbcTemplate = jdbcTemplate;
         this.sqlCache = sqlCache;
+        this.converters = converters;
 
         Class<?>[] types = GenericTypeResolver.resolveTypeArguments(method.getDeclaringClass(), Repository.class);
         repoType = types[0];
@@ -73,6 +75,18 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
      */
     @Override
     public Object execute(Object[] parameters) {
+        for(int i = 0; i < parameters.length; i++ ){
+            int idx = i;
+            Object param = parameters[idx];
+            Optional<JdbcTypeConverter> converter = converters.stream()
+                    .filter(c -> c.canConvertToSqlType(param))
+                    .sorted((a, b) -> a.getOrder() - b.getOrder())
+                    .findFirst();
+
+            converter.ifPresent(c -> parameters[idx] = c.convertToSqlType(param));
+        }
+
+
         String clazz = method.getDeclaringClass().getSimpleName();
         JdbcQuery ann = method.getAnnotation(JdbcQuery.class);
         Assert.notNull(ann, "Could not find @JdbcQuery on custom query for " + clazz + "#" + method.getName());
@@ -100,7 +114,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         }
 
 
-        Class<?> returnType = determineReturnType(isOptional, ann);
+        Class<?> returnType = determineReturnType(isOptional, isCollection, ann);
         RowMapper<?> rowMapper = RowMappers.resolveRowMapper(returnType);
         AutowireUtil.autowire(rowMapper);
 
@@ -117,7 +131,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
 
 
 
-    private Class<?> determineReturnType(boolean isOptional, JdbcQuery ann) {
+    private Class<?> determineReturnType(boolean isOptional, boolean isCollection, JdbcQuery ann) {
         Class<?> returnType;
         if( isOptional ){
             if( ann.beanType().equals(Class.class) ){
@@ -128,6 +142,18 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         }else{
             returnType = ann.beanType().equals(Class.class) ? method.getReturnType() : ann.beanType();
         }
+
+        // find a concrete type for interfaces
+        if( isCollection ) {
+            if (List.class.equals(returnType)) {
+                returnType = ArrayList.class;
+            } else if (Set.class.equals(returnType)) {
+                returnType = HashSet.class;
+            } else {
+                throw new RuntimeException("Cannot determine implementation response for type " + returnType);
+            }
+        }
+
         return returnType;
     }
 
