@@ -3,6 +3,7 @@ package io.aiur.oss.db.jdbc.jdbc.binding;
 
 import io.aiur.oss.db.jdbc.jdbc.annotation.EnableJdbcRepositories;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
+import io.aiur.oss.db.jdbc.jdbc.audit.JdbcAuditingHandler;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -26,6 +27,7 @@ import org.springframework.data.util.TypeInformation;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.Set;
 
 public class JdbcRepositoryRegistrar extends AbstractRepositoryConfigurationSourceSupport {
@@ -61,16 +63,19 @@ public class JdbcRepositoryRegistrar extends AbstractRepositoryConfigurationSour
 
         registry.registerBeanDefinition("jdbcEventFilter", new RootBeanDefinition(JdbcEventFilter.class));
 
-        boolean autoGenerate = (Boolean) importingClassMetadata
-                .getAnnotationAttributes(EnableJdbcRepositories.class.getName())
-                .get("generateRepositories");
-
+        Map<String, Object> attr = importingClassMetadata
+                .getAnnotationAttributes(EnableJdbcRepositories.class.getName());
+        boolean autoGenerate = (Boolean) attr.get("generateRepositories");
         if( autoGenerate ) {
             for (Class<?> entity : entities) {
                 registry.registerBeanDefinition(entity.getSimpleName() + "Repository", repoDefinition(entity));
             }
         }
 
+        boolean enableAuditing = (Boolean) attr.get("enableAuditing");
+        if( enableAuditing ){
+            registry.registerBeanDefinition("jdbcEventAuditor", new RootBeanDefinition(JdbcAuditingHandler.class));
+        }
     }
 
     public BeanDefinition repoDefinition(Class<?> domainType){

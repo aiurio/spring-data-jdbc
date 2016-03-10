@@ -23,6 +23,7 @@ public @interface EnableJdbcRepositories {
 
     boolean generateRepositories() default false;
 
+    boolean enableAuditing() default true;
 
     /**
      * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
