@@ -114,7 +114,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         }
 
 
-        Class<?> returnType = determineReturnType(isOptional, isCollection, ann);
+        Class<?> returnType = determineReturnType(isOptional, isCollection, methodType, ann);
         RowMapper<?> rowMapper = RowMappers.resolveRowMapper(returnType);
         AutowireUtil.autowire(rowMapper);
 
@@ -131,7 +131,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
 
 
 
-    private Class<?> determineReturnType(boolean isOptional, boolean isCollection, JdbcQuery ann) {
+    private Class<?> determineReturnType(boolean isOptional, boolean isCollection, Class<?> methodType, JdbcQuery ann) {
         Class<?> returnType;
         if( isOptional ){
             if( ann.beanType().equals(Class.class) ){
@@ -145,9 +145,9 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
 
         // find a concrete type for interfaces
         if( isCollection ) {
-            if (List.class.equals(returnType)) {
+            if ( List.class.isAssignableFrom(methodType)) {
                 returnType = ArrayList.class;
-            } else if (Set.class.equals(returnType)) {
+            } else if (Set.class.isAssignableFrom(methodType)) {
                 returnType = HashSet.class;
             } else {
                 throw new RuntimeException("Cannot determine implementation response for type " + returnType);
