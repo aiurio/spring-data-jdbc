@@ -1,8 +1,6 @@
 package io.aiur.oss.db.jdbc.jdbc.impl;
 
-import com.google.common.base.CaseFormat;
 import io.aiur.oss.db.jdbc.jdbc.BasePersistable;
-import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
 import io.aiur.oss.db.jdbc.jdbc.binding.JdbcEventFilter;
 import io.aiur.oss.db.jdbc.jdbc.binding.JdbcQueryUtil;
 import io.aiur.oss.db.jdbc.jdbc.mapping.RowMappers;
@@ -16,31 +14,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.rest.core.event.*;
-import org.springframework.jdbc.core.*;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by dave on 12/15/15.
@@ -116,7 +113,9 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
             obtainSqlGenerator();
         }
 
-        applicationContext.getAutowireCapableBeanFactory().autowireBean(rowUnmapper);
+        AutowireCapableBeanFactory bf = applicationContext.getAutowireCapableBeanFactory();
+        bf.autowireBean(rowUnmapper);
+        bf.autowireBean(rowMapper);
         initCustomSqlQueries();
     }
 

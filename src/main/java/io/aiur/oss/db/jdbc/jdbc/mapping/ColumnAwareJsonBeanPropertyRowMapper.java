@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanWrapper;
+import org.springframework.context.annotation.Lazy;
 
 import javax.inject.Inject;
 import java.beans.PropertyEditorSupport;
@@ -21,10 +23,14 @@ import java.util.Set;
  */
 public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanPropertyRowMapper<T> {
 
-    @Inject
+    @Inject @Lazy
     private ObjectMapper objectMapper;
 
+    @Getter
     private List<Tuple> jsonCollections = Lists.newArrayList();
+
+    @Getter
+    private List<MapTuple> jsonMaps = Lists.newArrayList();
 
     public ColumnAwareJsonBeanPropertyRowMapper() { super(); }
 
@@ -41,6 +47,14 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         return this;
     }
 
+    public <K, V> ColumnAwareJsonBeanPropertyRowMapper jsonMap(Class<?> type, String property, TypeReference<Map<K, V>> typeRef){
+        jsonMaps.add(new MapTuple(type, property, typeRef));
+        return this;
+    }
+
+
+
+
 
 
     @Override
@@ -49,6 +63,12 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         jsonCollections.forEach(t -> {
             bw.registerCustomEditor(t.type, t.property, new JsonCollectionDeserializer(t.typeRef, objectMapper));
         });
+
+        jsonMaps.forEach(t -> {
+            bw.registerCustomEditor(t.type, t.property, new JsonMapDeserializer(t.typeRef, objectMapper));
+        });
+
+
     }
 
 
@@ -57,6 +77,13 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         final Class<?> type;
         final String property;
         final TypeReference<List<?>> typeRef;
+    }
+
+    @RequiredArgsConstructor
+    private class MapTuple<E> {
+        final Class<?> type;
+        final String property;
+        final TypeReference<Map<?, ?>> typeRef;
     }
 
     @RequiredArgsConstructor
