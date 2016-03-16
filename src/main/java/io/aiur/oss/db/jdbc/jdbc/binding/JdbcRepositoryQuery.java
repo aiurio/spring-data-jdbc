@@ -1,7 +1,10 @@
 package io.aiur.oss.db.jdbc.jdbc.binding;
 
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcQuery;
 import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.impl.JdbcRepositoryImpl;
@@ -18,16 +21,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import other.AutowireUtil;
 import other.ProjectionService;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 
@@ -100,7 +107,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         boolean isCollection = Collection.class.isAssignableFrom( methodType );
 
         // by default, just return the results from the database
-        Function<List<?>, ?> processor = (o) -> o;
+        Function<Iterable<?>, ?> processor = (o) -> o;
 
         // handle custom types
         if( parameters.length > 0 && parameters[parameters.length -1] instanceof Pageable ){
@@ -108,18 +115,29 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
             processor = createPageableProcessor(pageable, namedParams, ann);
             addPageableLimitClause(pageable, sql);
         } else if (isOptional ){
-            processor = (results) -> results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+            processor = (results) -> Iterables.size(results) == 0 ? Optional.empty() : Optional.of(results.iterator().next());
         } else if( !isCollection) {
-            processor = (results) -> results.isEmpty() ? null : results.get(0);
+            processor = (results) -> Iterables.size(results) == 0 ? null : results.iterator().next();
         }
 
 
-        Class<?> returnType = determineReturnType(isOptional, isCollection, methodType, ann);
+        Class<?> returnType = determineReturnType(isOptional, isCollection, method, ann);
         RowMapper<?> rowMapper = RowMappers.resolveRowMapper(returnType);
         AutowireUtil.autowire(rowMapper);
 
 
-        List<?> results = jdbcTemplate.query(sql.toString(), namedParams, rowMapper);
+        Collection<?> results = jdbcTemplate.query(sql.toString(), namedParams, rowMapper);
+        // find a concrete type for interfaces
+        if( isCollection ) {
+            if ( List.class.isAssignableFrom(method.getReturnType())) {
+                // do nothing!
+            } else if (Set.class.isAssignableFrom(method.getReturnType())) {
+                results = Sets.newHashSet(results);
+            } else {
+                throw new RuntimeException("Cannot determine implementation response for type " + returnType);
+            }
+        }
+
 
         Object processed = processor.apply(results);
         if( !ann.projection().equals(Class.class) ){
@@ -131,7 +149,7 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
 
 
 
-    private Class<?> determineReturnType(boolean isOptional, boolean isCollection, Class<?> methodType, JdbcQuery ann) {
+    private Class<?> determineReturnType(boolean isOptional, boolean isCollection, Method method, JdbcQuery ann) {
         Class<?> returnType;
         if( isOptional ){
             if( ann.beanType().equals(Class.class) ){
@@ -140,17 +158,26 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
                 returnType = ann.beanType();
             }
         }else{
-            returnType = ann.beanType().equals(Class.class) ? method.getReturnType() : ann.beanType();
-        }
-
-        // find a concrete type for interfaces
-        if( isCollection ) {
-            if ( List.class.isAssignableFrom(methodType)) {
-                returnType = ArrayList.class;
-            } else if (Set.class.isAssignableFrom(methodType)) {
-                returnType = HashSet.class;
-            } else {
-                throw new RuntimeException("Cannot determine implementation response for type " + returnType);
+            if( ann.beanType().equals(Class.class) ){
+                if( isCollection ){
+                    Type rt = method.getGenericReturnType();
+                    if( rt instanceof ParameterizedTypeImpl ){
+                        Type[] args = ((ParameterizedTypeImpl) rt).getActualTypeArguments();
+                        if( args.length == 1 ){
+                            returnType = (Class<?>) args[0];
+                        }else{
+                            log.warn("Multiple generic types found for collection on method {}", method);
+                            returnType = Map.class;
+                        }
+                    }else{
+                        log.warn("Could not determine generic type for collection on method {}", method);
+                        returnType = Map.class;
+                    }
+                }else{
+                    returnType = method.getReturnType();
+                }
+            }else {
+                returnType = ann.beanType();
             }
         }
 
@@ -168,9 +195,9 @@ public class JdbcRepositoryQuery implements RepositoryQuery {
         sql.append(" " + limitClause);
     }
 
-    private Function<List<?>, ?> createPageableProcessor(Pageable pageable, Map<String, Object> namedParams, JdbcQuery ann) {
+    private Function<Iterable<?>, ?> createPageableProcessor(Pageable pageable, Map<String, Object> namedParams, JdbcQuery ann) {
         Long totalElements = queryTotalElements(ann, namedParams);
-        Function<List<?>, ?> processor = (results) -> new PageImpl(results, pageable, totalElements);
+        Function<Iterable<?>, ?> processor = (results) -> new PageImpl(Lists.newArrayList(results), pageable, totalElements);
         return processor;
     }
 
