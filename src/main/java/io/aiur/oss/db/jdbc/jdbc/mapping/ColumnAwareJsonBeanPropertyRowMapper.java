@@ -42,6 +42,11 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         super(mappedClass, checkFullyPopulated);
     }
 
+    public <E> ColumnAwareJsonBeanPropertyRowMapper jsonObject(Class<?> type, String property, TypeReference<?> typeRef){
+        jsonCollections.add(new Tuple(type, property, typeRef));
+        return this;
+    }
+
     public <E> ColumnAwareJsonBeanPropertyRowMapper jsonCollection(Class<?> type, String property, TypeReference<List<E>> typeRef){
         jsonCollections.add(new Tuple(type, property, typeRef));
         return this;
@@ -51,11 +56,6 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         jsonMaps.add(new MapTuple(type, property, typeRef));
         return this;
     }
-
-
-
-
-
 
     @Override
     protected void initBeanWrapper(BeanWrapper bw) {
@@ -67,16 +67,13 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         jsonMaps.forEach(t -> {
             bw.registerCustomEditor(t.type, t.property, new JsonMapDeserializer(t.typeRef, objectMapper));
         });
-
-
     }
-
 
     @RequiredArgsConstructor
     private class Tuple<E> {
         final Class<?> type;
         final String property;
-        final TypeReference<List<?>> typeRef;
+        final TypeReference typeRef;
     }
 
     @RequiredArgsConstructor
@@ -89,7 +86,7 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
     @RequiredArgsConstructor
     class JsonCollectionDeserializer<E> extends PropertyEditorSupport {
 
-        private final TypeReference<List<E>> typeRef;
+        private final TypeReference<?> typeRef;
         private final ObjectMapper objectMapper;
 
         @Override
@@ -109,7 +106,7 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
             }else{
                 // parse our result
                 try {
-                    List<E> r = objectMapper.readValue(value.toString(), typeRef);
+                    Object r = objectMapper.readValue(value.toString(), typeRef);
                     value = r;
                 } catch (IOException e) {
                     throw new RuntimeException("Could not deserialize collection of " + typeRef.getType().toString(), e);
@@ -150,6 +147,4 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
             super.setValue(value);
         }
     }
-
-
 }
