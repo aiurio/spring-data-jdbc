@@ -4,7 +4,7 @@
 
     <groupId>io.aiur.oss</groupId>
     <artifactId>spring-data-jdbc</artifactId>
-    <version>0.2.12.RELEASE</version>
+    <version>0.2.13.BUILD-SNAPSHOT</version>
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -141,14 +141,14 @@
         <repository>
             <id>aiur-nexus</id>
             <name>aiur-nexus</name>
-            <url>https://nexus-aiur2016.rhcloud.com/nexus/content/repositories/releases</url>
+            <url>https://jenkins.maellebeauty.com/nexus/content/repositories/releases</url>
         </repository>
     </distributionManagement>
 
     <repositories>
         <repository>
             <id>aiur-nexus</id>
-            <url>https://nexus-aiur2016.rhcloud.com/nexus/content/groups/public/</url>
+            <url>https://jenkins.maellebeauty.com/nexus/content/groups/public/</url>
         </repository>
     </repositories>
 
