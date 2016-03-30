@@ -136,7 +136,7 @@
     <distributionManagement>
         <snapshotRepository>
             <id>aiur-nexus</id>
-            <url>https://nexus-aiur2016.rhcloud.com/nexus/content/repositories/snapshots</url>
+            <url>https://jenkins.maellebeauty.com/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
             <id>aiur-nexus</id>
