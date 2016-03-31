@@ -4,11 +4,12 @@ import com.google.common.collect.Lists;
 import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.*;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import other.ProjectionService;
+import io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService;
 
 import javax.inject.Inject;
 import java.lang.reflect.Method;
@@ -21,7 +22,7 @@ public class JdbcQueryLookupStrategy implements QueryLookupStrategy {
 
     private final EvaluationContextProvider evaluationContextProvider;
 
-    @Inject
+    @Inject @Lazy
     private SqlCache sqlCache;
 
     @Inject

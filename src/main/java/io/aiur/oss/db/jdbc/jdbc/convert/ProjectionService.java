@@ -1,10 +1,11 @@
-package other;
+package io.aiur.oss.db.jdbc.jdbc.convert;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.hateoas.PagedResources;
 
 
 import javax.inject.Inject;
@@ -30,6 +31,14 @@ public class ProjectionService {
 
     public <P, E> P convert(E src, Class<P> projection){
         return factory.createProjection(projection, src);
+    }
+
+    public <P, E> PagedResources<P> convert(PagedResources<E> src, Class<P> projection){
+        List<P> projections = src.getContent().stream()
+                .map(e -> e == null ? null : factory.createProjection(projection, e))
+                .collect(Collectors.toList());
+
+        return new PagedResources(projections, src.getMetadata(), src.getLinks());
     }
 
 }

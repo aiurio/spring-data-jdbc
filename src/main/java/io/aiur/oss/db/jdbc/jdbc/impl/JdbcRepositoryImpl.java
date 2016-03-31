@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -69,7 +70,7 @@ public class JdbcRepositoryImpl<T extends BasePersistable<ID>, ID extends Serial
     private ApplicationContext applicationContext;
     @Inject
     private ApplicationEventPublisher publisher;
-    @Inject
+    @Inject @Lazy
     private SqlCache sqlCache;
 
     protected String deleteSql, deleteAllSql, existsSql, findOneSql, countSql;

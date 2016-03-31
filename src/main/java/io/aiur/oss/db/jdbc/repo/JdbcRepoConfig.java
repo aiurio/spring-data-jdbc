@@ -1,9 +1,12 @@
 package io.aiur.oss.db.jdbc.repo;
 
 import io.aiur.oss.db.jdbc.annotation.ExposeId;
+import io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService;
 import io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -43,8 +46,15 @@ public class JdbcRepoConfig extends RepositoryRestConfigurerAdapter {
     }
 
     @Bean
-    public SqlCache sqlCache(){
+    @ConditionalOnMissingBean(type = "io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache")
+    public SqlCache jdbcSqlCache(){
         return new SqlCache();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(type = "io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService")
+    public ProjectionService jdbcProjectionService(){
+        return new ProjectionService();
     }
 
 }

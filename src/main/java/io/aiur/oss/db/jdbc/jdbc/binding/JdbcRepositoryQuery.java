@@ -29,7 +29,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import other.AutowireUtil;
-import other.ProjectionService;
+import io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.annotation.Annotation;
