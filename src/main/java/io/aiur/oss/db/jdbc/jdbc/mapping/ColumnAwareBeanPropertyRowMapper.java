@@ -11,11 +11,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanWrapper;
+import org.springframework.data.annotation.Transient;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.util.ReflectionUtils;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -75,7 +77,10 @@ public class ColumnAwareBeanPropertyRowMapper<T> extends BeanPropertyRowMapper<T
             // default to lower_hyphen columns (if not specified)
             CaseFormat columnFormat = convert == null ? CaseFormat.LOWER_UNDERSCORE : convert.value();
 
-            if( columnDef != null ) {
+            Transient trans = field.getAnnotation(Transient.class);
+            if( trans != null || Modifier.isTransient(field.getModifiers())) {
+                removals.add(f);
+            }else if( columnDef != null ) {
                 overrides.put(columnDef.value(), pd);
                 removals.add(f);
                 mappings.add(new ColumnPropertyMapping(pd.getName(), columnDef.value(), pd));
