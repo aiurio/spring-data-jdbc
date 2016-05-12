@@ -31,7 +31,7 @@ public class JdbcRepoConfig extends RepositoryRestConfigurerAdapter {
     @Inject
     private PersistentEntities persistentEntities;
 
-    @Value("${app.basePackage:zrware}")
+    @Value("${app.basePackage:io.aiur}")
     private String basePackage;
 
     @Override

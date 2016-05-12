@@ -4,6 +4,9 @@ package io.aiur.oss.db.jdbc.jdbc.binding;
 import io.aiur.oss.db.jdbc.jdbc.annotation.EnableJdbcRepositories;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcEntity;
 import io.aiur.oss.db.jdbc.jdbc.audit.JdbcAuditingHandler;
+import io.aiur.oss.db.jdbc.jdbc.mapping.JdbcPersistentEntityImpl;
+import io.aiur.oss.db.jdbc.jdbc.mapping.JdbcPersistentProperty;
+import io.aiur.oss.db.jdbc.jdbc.mapping.JdbcPersistentPropertyImpl;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -11,12 +14,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.data.AbstractRepositoryConfigurationSourceSupport;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.data.mapping.Association;
-import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.context.AbstractMappingContext;
-import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
-import org.springframework.data.mapping.model.BasicPersistentEntity;
-import org.springframework.data.mapping.model.MutablePersistentEntity;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
@@ -93,22 +91,16 @@ public class JdbcRepositoryRegistrar extends AbstractRepositoryConfigurationSour
                 .getBeanDefinition();
     }
 
-    public static class JdbcMappingContext extends AbstractMappingContext {
-
+    public static class JdbcMappingContext extends AbstractMappingContext<JdbcPersistentEntityImpl<?>, JdbcPersistentProperty> {
         @Override
-        protected MutablePersistentEntity createPersistentEntity(TypeInformation typeInformation) {
-            TypeInformation<?> typeInfo = ClassTypeInformation.from(typeInformation.getType());
-            return new BasicPersistentEntity(typeInfo);
+        protected <T> JdbcPersistentEntityImpl<?> createPersistentEntity(TypeInformation<T> typeInformation) {
+            TypeInformation<T> typeInfo = ClassTypeInformation.from(typeInformation.getType());
+            return new JdbcPersistentEntityImpl<>(typeInfo);
         }
 
         @Override
-        protected PersistentProperty createPersistentProperty(Field field, PropertyDescriptor descriptor, MutablePersistentEntity owner, SimpleTypeHolder simpleTypeHolder) {
-            return new AnnotationBasedPersistentProperty(field, descriptor, owner, simpleTypeHolder){
-                @Override
-                protected Association createAssociation() {
-                    return null;
-                }
-            };
+        protected JdbcPersistentProperty createPersistentProperty(Field field, PropertyDescriptor descriptor, JdbcPersistentEntityImpl<?> owner, SimpleTypeHolder simpleTypeHolder) {
+            return new JdbcPersistentPropertyImpl(field, descriptor, owner, simpleTypeHolder);
         }
     }
 
