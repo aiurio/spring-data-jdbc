@@ -21,6 +21,9 @@ public class JdbcEventFilter implements Filter {
     @Inject
     private DelegatingHandlerMapping restHandlerMapping;
 
+    @Inject
+    private DelegatingHandlerMapping requestMappingHandlerMapping;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {}
 
@@ -33,8 +36,12 @@ public class JdbcEventFilter implements Filter {
         Boolean isRestRepoExecution = Boolean.FALSE;
         try {
             try {
-                HandlerExecutionChain handler = restHandlerMapping.getHandler(req);
-                isRestRepoExecution = handler != null;
+                HandlerExecutionChain restHandler = restHandlerMapping.getHandler(req);
+                HandlerExecutionChain ourHandler = requestMappingHandlerMapping.getHandler(req);
+
+                // only mark it as a RestExecution if "theirs" is present and "ours" is not
+                // (aka, if we have a collision and ours takes precidence, it's not a RestExecution)
+                isRestRepoExecution = restHandler != null && ourHandler == null;
             } catch (Exception e) {}
 
             CONTEXT.set(isRestRepoExecution);

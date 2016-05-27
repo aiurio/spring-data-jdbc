@@ -1,7 +1,9 @@
 package io.aiur.oss.db.jdbc.jdbc.audit;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.auditing.AuditingHandler;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.mapping.context.PersistentEntities;
 import org.springframework.data.rest.core.event.BeforeCreateEvent;
@@ -11,6 +13,15 @@ import org.springframework.data.rest.core.event.RepositoryEvent;
 import javax.inject.Inject;
 
 public class JdbcAuditingHandler extends AuditingHandler implements ApplicationListener<RepositoryEvent> {
+
+    @Autowired(required = false)
+    private AuditorAware<?> auditorAware;
+
+    @Override
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
+        this.setAuditorAware(this.auditorAware);
+    }
 
     @Inject
     public JdbcAuditingHandler(PersistentEntities entities) {
