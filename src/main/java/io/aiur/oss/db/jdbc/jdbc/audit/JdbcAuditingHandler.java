@@ -20,7 +20,9 @@ public class JdbcAuditingHandler extends AuditingHandler implements ApplicationL
     @Override
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
-        this.setAuditorAware(this.auditorAware);
+        if( this.auditorAware != null ) {
+            this.setAuditorAware(this.auditorAware);
+        }
     }
 
     @Inject
