@@ -1,11 +1,11 @@
 package io.aiur.oss.db.jdbc.jdbc.binding;
 
 import io.aiur.oss.db.jdbc.jdbc.JdbcRepository;
+import io.aiur.oss.db.jdbc.jdbc.mapping.JdbcPersistentEntityImpl;
 import lombok.Setter;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.core.support.TransactionalRepositoryFactoryBeanSupport;
@@ -43,7 +43,7 @@ public class JdbcRepositoryFactory<T extends Repository<S, ID>, S, ID extends Se
     @Override
     public PersistentEntity<?, ?> getPersistentEntity() {
         TypeInformation<?> typeInfo = ClassTypeInformation.from(domainType);
-        return new BasicPersistentEntity(typeInfo);
+        return new JdbcPersistentEntityImpl<>(typeInfo);
     }
 
     @Override

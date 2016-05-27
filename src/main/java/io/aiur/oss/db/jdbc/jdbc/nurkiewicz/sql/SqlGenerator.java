@@ -4,6 +4,7 @@ package io.aiur.oss.db.jdbc.jdbc.nurkiewicz.sql;
 import io.aiur.oss.db.jdbc.jdbc.nurkiewicz.TableDescription;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.Assert;
 
 import java.util.Iterator;
 import java.util.List;
@@ -147,13 +148,27 @@ public class SqlGenerator {
 		final StringBuilder updateQuery = new StringBuilder("UPDATE " + table.getName() + " SET ");
 		for(Iterator<Map.Entry<String,Object>> iterator = columns.entrySet().iterator(); iterator.hasNext();) {
 			Map.Entry<String, Object> column = iterator.next();
+			Object value = column.getValue();
 			updateQuery.append(column.getKey()).append(" = ?");
+			if( value != null && shouldCastOnUpdate(value.getClass()) ){
+				updateQuery.append(updateCastForType(value.getClass()));
+			}
 			if (iterator.hasNext()) {
 				updateQuery.append(COMMA);
 			}
 		}
 		updateQuery.append(whereByIdClause(table));
 		return updateQuery.toString();
+	}
+
+	public boolean shouldCastOnUpdate(Class<?> type){
+		return Map.class.isAssignableFrom(type);
+	}
+
+	public String updateCastForType(Class<?> type){
+		// only used for maps in postgres right now...
+		Assert.isTrue(Map.class.isAssignableFrom(type), "Tried to cast for a unknown type: " + type);
+		return "::JSON";
 	}
 
 	public String create(TableDescription table, Map<String, Object> columns) {
