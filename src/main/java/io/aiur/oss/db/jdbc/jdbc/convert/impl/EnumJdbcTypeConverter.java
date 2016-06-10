@@ -1,5 +1,6 @@
-package io.aiur.oss.db.jdbc.jdbc.convert;
+package io.aiur.oss.db.jdbc.jdbc.convert.impl;
 
+import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.mapping.ColumnAwareBeanPropertyRowMapper;
 import lombok.Getter;
 import lombok.Setter;

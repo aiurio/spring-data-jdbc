@@ -5,8 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaDateTimeEditor;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaLocalDateEditor;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaLocalDateTimeEditor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.context.annotation.Lazy;
 
@@ -60,6 +66,8 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
     @Override
     protected void initBeanWrapper(BeanWrapper bw) {
         super.initBeanWrapper(bw);
+        initializeJoda(bw);
+
         jsonCollections.forEach(t -> {
             bw.registerCustomEditor(t.type, t.property, new JsonCollectionDeserializer(t.typeRef, objectMapper));
         });
@@ -67,6 +75,14 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         jsonMaps.forEach(t -> {
             bw.registerCustomEditor(t.type, t.property, new JsonMapDeserializer(t.typeRef, objectMapper));
         });
+
+
+    }
+
+    protected void initializeJoda(BeanWrapper bw) {
+        bw.registerCustomEditor(LocalDate.class, new JodaLocalDateEditor());
+        bw.registerCustomEditor(DateTime.class, new JodaDateTimeEditor());
+        bw.registerCustomEditor(LocalDateTime.class, new JodaLocalDateTimeEditor());
     }
 
     @RequiredArgsConstructor

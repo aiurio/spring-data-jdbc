@@ -1,22 +1,20 @@
-package io.aiur.oss.db.jdbc.jdbc.convert;
+package io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.converter;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import org.joda.time.DateTime;
-import other.MapUtils;
+import org.joda.time.LocalDate;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Created by dave on 2/10/16.
  */
-public class JodaJdbcTypeConverter implements JdbcTypeConverter{
+public class JodaJdbcTypeConverter implements JdbcTypeConverter {
 
     private List<Class<?>> TYPES = Lists.newArrayList(
-        DateTime.class
+            DateTime.class, LocalDate.class
     );
 
 
@@ -30,6 +28,8 @@ public class JodaJdbcTypeConverter implements JdbcTypeConverter{
         switch(raw.getClass().getSimpleName() ){
             case "DateTime":
                 return new Timestamp(((DateTime) raw).getMillis() );
+            case "LocalDate":
+                return new java.sql.Date( ((LocalDate) raw).toDate().getTime() );
 
         }
         throw new IllegalStateException("Could not match object " + raw);

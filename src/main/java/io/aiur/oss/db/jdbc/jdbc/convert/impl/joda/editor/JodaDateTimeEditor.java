@@ -1,4 +1,4 @@
-package io.aiur.oss.db.jdbc.jdbc.convert;
+package io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor;
 
 import org.joda.time.DateTime;
 

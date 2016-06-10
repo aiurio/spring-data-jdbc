@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcColumn;
 import io.aiur.oss.db.jdbc.jdbc.annotation.JdbcColumnConvert;
-import io.aiur.oss.db.jdbc.jdbc.convert.JodaDateTimeEditor;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaDateTimeEditor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
