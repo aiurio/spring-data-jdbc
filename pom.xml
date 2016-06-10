@@ -4,7 +4,7 @@
 
     <groupId>io.aiur.oss</groupId>
     <artifactId>spring-data-jdbc</artifactId>
-    <version>0.2.17.BUILD-SNAPSHOT</version>
+    <version>0.2.18.BUILD-SNAPSHOT</version>
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
