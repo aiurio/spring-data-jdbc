@@ -30,10 +30,13 @@ import java.util.Set;
 public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanPropertyRowMapper<T> {
 
     @Inject @Lazy
-    private ObjectMapper objectMapper;
+    protected ObjectMapper objectMapper;
 
     @Getter
     private List<Tuple> jsonCollections = Lists.newArrayList();
+
+    @Getter
+    private List<Tuple> jsonObjects = Lists.newArrayList();
 
     @Getter
     private List<MapTuple> jsonMaps = Lists.newArrayList();
@@ -48,8 +51,8 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         super(mappedClass, checkFullyPopulated);
     }
 
-    public <E> ColumnAwareJsonBeanPropertyRowMapper jsonObject(Class<?> type, String property, TypeReference<?> typeRef){
-        jsonCollections.add(new Tuple(type, property, typeRef));
+    public <E> ColumnAwareJsonBeanPropertyRowMapper jsonObject(Class<?> type, String property){
+        jsonObjects.add(new Tuple(type, property, null));
         return this;
     }
 
@@ -68,6 +71,10 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         super.initBeanWrapper(bw);
         initializeJoda(bw);
 
+        jsonObjects.forEach(t -> {
+            bw.registerCustomEditor(t.type, t.property, new JsonObjectDeserializer<>(t.type, objectMapper));
+        });
+
         jsonCollections.forEach(t -> {
             bw.registerCustomEditor(t.type, t.property, new JsonCollectionDeserializer(t.typeRef, objectMapper));
         });
@@ -85,11 +92,17 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
         bw.registerCustomEditor(LocalDateTime.class, new JodaLocalDateTimeEditor());
     }
 
-    @RequiredArgsConstructor
+
     private class Tuple<E> {
         final Class<?> type;
         final String property;
         final TypeReference typeRef;
+
+        private Tuple(Class<?> type, String property, TypeReference typeRef) {
+            this.type = type;
+            this.property = property;
+            this.typeRef = typeRef;
+        }
     }
 
     @RequiredArgsConstructor
@@ -158,6 +171,29 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
                     value = r;
                 } catch (IOException e) {
                     throw new RuntimeException("Could not deserialize collection of " + typeRef.getType().toString(), e);
+                }
+            }
+            super.setValue(value);
+        }
+    }
+
+
+    @RequiredArgsConstructor
+    class JsonObjectDeserializer<V> extends PropertyEditorSupport {
+
+        private final Class<V> type;
+        private final ObjectMapper objectMapper;
+
+        @Override
+        public void setValue(Object value) {
+            if(value != null) {
+
+                // parse our result
+                try {
+                    V r = objectMapper.readValue(value.toString(), type);
+                    value = r;
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not deserialize instance of " + type.toString(), e);
                 }
             }
             super.setValue(value);
