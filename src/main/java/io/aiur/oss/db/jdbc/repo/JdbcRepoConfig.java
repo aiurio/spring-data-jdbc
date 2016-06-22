@@ -1,11 +1,14 @@
 package io.aiur.oss.db.jdbc.repo;
 
 import io.aiur.oss.db.jdbc.annotation.ExposeId;
+import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.EnumJdbcTypeConverter;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.converter.JodaJdbcTypeConverter;
+import io.aiur.oss.db.jdbc.jdbc.convert.impl.postgres.PostgresJsonJdbcTypeConverter;
 import io.aiur.oss.db.jdbc.jdbc.mapping.SqlCache;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +18,6 @@ import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import other.StreamUtils;
-
 
 import javax.inject.Inject;
 import java.util.Set;
@@ -55,6 +57,21 @@ public class JdbcRepoConfig extends RepositoryRestConfigurerAdapter {
     @ConditionalOnMissingBean(type = "io.aiur.oss.db.jdbc.jdbc.convert.ProjectionService")
     public ProjectionService jdbcProjectionService(){
         return new ProjectionService();
+    }
+
+    @Bean
+    public JdbcTypeConverter postgresJsonJdbcTypeConverter(){
+        return new PostgresJsonJdbcTypeConverter();
+    }
+
+    @Bean
+    public JdbcTypeConverter jodaJdbcTypeConverter(){
+        return new JodaJdbcTypeConverter();
+    }
+
+    @Bean
+    public JdbcTypeConverter enumJdbcTypeConverter(){
+        return new EnumJdbcTypeConverter();
     }
 
 }

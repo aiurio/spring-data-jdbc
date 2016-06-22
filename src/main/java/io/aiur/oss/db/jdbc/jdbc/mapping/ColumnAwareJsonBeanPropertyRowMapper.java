@@ -10,6 +10,7 @@ import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaLocalDateEditor;
 import io.aiur.oss.db.jdbc.jdbc.convert.impl.joda.editor.JodaLocalDateTimeEditor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.util.Set;
 /**
  * Created by dave on 12/30/15.
  */
+@Slf4j
 public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanPropertyRowMapper<T> {
 
     @Inject @Lazy
@@ -143,6 +145,12 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
             }
 
             super.setValue(value);
+        }
+
+        // if the JSON is cast to a string, this gets called instead...
+        @Override
+        public void setAsText(String text) throws IllegalArgumentException {
+            setValue(text);
         }
     }
 
