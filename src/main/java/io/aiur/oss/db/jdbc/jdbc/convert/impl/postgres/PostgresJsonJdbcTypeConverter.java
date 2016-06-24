@@ -3,6 +3,7 @@ package io.aiur.oss.db.jdbc.jdbc.convert.impl.postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import org.postgresql.util.PGobject;
+import org.springframework.context.annotation.Lazy;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 public class PostgresJsonJdbcTypeConverter implements JdbcTypeConverter{
 
-    @Inject
+    @Inject @Lazy
     private ObjectMapper objectMapper;
 
     @Override
