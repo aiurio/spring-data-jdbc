@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 import io.aiur.oss.db.jdbc.jdbc.convert.JdbcTypeConverter;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
 
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -30,6 +32,8 @@ public class JodaJdbcTypeConverter implements JdbcTypeConverter {
                 return new Timestamp(((DateTime) raw).getMillis() );
             case "LocalDate":
                 return new java.sql.Date( ((LocalDate) raw).toDate().getTime() );
+            case "LocalTime":
+                return new Time( ((LocalTime) raw).toDateTimeToday().getMillis());
 
         }
         throw new IllegalStateException("Could not match object " + raw);
