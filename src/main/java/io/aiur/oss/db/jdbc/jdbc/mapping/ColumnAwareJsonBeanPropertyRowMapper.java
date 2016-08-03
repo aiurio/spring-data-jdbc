@@ -172,6 +172,8 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
                     }
                 }
 
+            } else if( Map.class.isInstance(value) ){
+                // do nothing... we're already converted!
             }else{
                 // parse our result
                 try {
@@ -182,6 +184,12 @@ public class ColumnAwareJsonBeanPropertyRowMapper<T> extends ColumnAwareBeanProp
                 }
             }
             super.setValue(value);
+        }
+
+        // Ignore the typecheck, to work around the Map<String, Object> scenario
+        @Override
+        public void setAsText(String text) throws IllegalArgumentException {
+            super.setValue(text);
         }
     }
 
