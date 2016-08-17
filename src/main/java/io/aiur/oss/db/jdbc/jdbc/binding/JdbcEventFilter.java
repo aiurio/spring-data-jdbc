@@ -2,6 +2,7 @@ package io.aiur.oss.db.jdbc.jdbc.binding;
 
 import org.springframework.data.rest.webmvc.support.DelegatingHandlerMapping;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
 
 import javax.inject.Inject;
@@ -42,6 +43,14 @@ public class JdbcEventFilter implements Filter {
                 // only mark it as a RestExecution if "theirs" is present and "ours" is not
                 // (aka, if we have a collision and ours takes precidence, it's not a RestExecution)
                 isRestRepoExecution = restHandler != null && ourHandler == null;
+
+                // there's occasions where we get a match on both, so make sure they're not the same method invocation
+                if( !isRestRepoExecution
+                        && restHandler != null && restHandler.getHandler() instanceof HandlerMethod
+                        && ourHandler != null && ourHandler.getHandler() instanceof HandlerMethod ){
+                    isRestRepoExecution = ((HandlerMethod) ourHandler.getHandler()).getMethod().equals( ((HandlerMethod) restHandler.getHandler()).getMethod() );
+                }
+
             } catch (Exception e) {}
 
             CONTEXT.set(isRestRepoExecution);
