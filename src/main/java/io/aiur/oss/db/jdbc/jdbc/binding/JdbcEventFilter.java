@@ -44,11 +44,14 @@ public class JdbcEventFilter implements Filter {
                 // (aka, if we have a collision and ours takes precidence, it's not a RestExecution)
                 isRestRepoExecution = restHandler != null && ourHandler == null;
 
-                // there's occasions where we get a match on both, so make sure they're not the same method invocation
-                if( !isRestRepoExecution
-                        && restHandler != null && restHandler.getHandler() instanceof HandlerMethod
-                        && ourHandler != null && ourHandler.getHandler() instanceof HandlerMethod ){
-                    isRestRepoExecution = ((HandlerMethod) ourHandler.getHandler()).getMethod().equals( ((HandlerMethod) restHandler.getHandler()).getMethod() );
+                // there's occasions where we get a match on both, so make sure they're not in the SDR package
+                if( !isRestRepoExecution ){
+                    isRestRepoExecution = ((HandlerMethod) restHandler.getHandler())
+                                                                      .getMethod()
+                                                                      .getDeclaringClass()
+                                                                      .getPackage()
+                                                                      .getName()
+                                                                      .startsWith("org.springframework.data.rest");
                 }
 
             } catch (Exception e) {}
