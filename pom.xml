@@ -4,7 +4,7 @@
 
     <groupId>io.aiur.oss</groupId>
     <artifactId>spring-data-jdbc</artifactId>
-    <version>0.2.25.BUILD-SNAPSHOT</version>
+    <version>0.2.26.BUILD-SNAPSHOT</version>
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4.1207.jre7</version>
+            <version>9.4.1211</version>
         </dependency>
     </dependencies>
 
